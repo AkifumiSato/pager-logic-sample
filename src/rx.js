@@ -4,7 +4,7 @@ import flow from 'lodash/fp/flow'
 import take from 'lodash/fp/take'
 import orderBy from 'lodash/orderBy'
 
-const absDeltaSort = center => list => list.sort((a,b) => (Math.abs(center - a) < Math.abs(center - b) ? -1 : 1))
+const absSort = center => list => list.sort((a,b) => (Math.abs(center - a) < Math.abs(center - b) ? -1 : 1))
 
 // 引数までの数列を生成する関数を返却
 const getExpandList = (width, maxLimit, minLimit) => (center) => {
@@ -12,7 +12,7 @@ const getExpandList = (width, maxLimit, minLimit) => (center) => {
   const min = center - width < minLimit ? minLimit : center - width
 
   return flow(
-    absDeltaSort(center),
+    absSort(center),
     take(width),
     orderBy,
   )(range(min, max))

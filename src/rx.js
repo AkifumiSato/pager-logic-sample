@@ -1,46 +1,35 @@
-import { range } from 'rxjs'
-import { filter, map } from 'rxjs/operators'
+import { from } from 'rxjs'
+import { map, scan, take, takeLast } from 'rxjs/operators'
 
-const rangeGenerator = function* (start, limit) {
-  while (start <= limit) {
-    yield start++
+const absDeltaGenerator = function* (start, max, min) {
+  let index = 0
+  while (start + index + 1 <= max || start - index - 1 >= min) {
+    index++
+    if (start + index <= max) {
+      yield start + index
+    }
+    if (start - index >= min) {
+      yield start - index
+    }
   }
 }
 
-const nearPage = (width, maxLimit, minLimit = 0) => value => {
-  const min = value - width < minLimit ? minLimit : value - width
-  const max = min + (width * 2 + 1) > maxLimit ? maxLimit : min + (width * 2 + 1)
-  return Array.from([...rangeGenerator(min, max)])
-    .filter((_, i) => i < 5)
-}
+const createPagerList = (center, max, min = 1) => from(absDeltaGenerator(center, max, min))
+  .pipe(
+    take(4),
+    scan((acc, value) => [...acc, value], [ center ]),
+    takeLast(1),
+    map(list => list.sort((a, b) => (a > b ? 1 : -1))),
+  )
 
-const createPagerList = ({ max, min = 0, width }) => {
-  const getPagerList = nearPage(width, max)
+// test
+createPagerList(1, 20).subscribe(value => console.log(value))
+createPagerList(2, 20).subscribe(value => console.log(value))
+createPagerList(5, 20).subscribe(value => console.log(value))
+createPagerList(10, 20).subscribe(value => console.log(value))
+createPagerList(18, 20).subscribe(value => console.log(value))
+createPagerList(20, 20).subscribe(value => console.log(value))
 
-  console.log(getPagerList(0))
-  console.log(getPagerList(1))
-  console.log(getPagerList(19))
-  console.log(getPagerList(20))
-
-  return range(min, max)
-    .pipe(
-      map(value => ({
-        center: value + 1,
-        list: getPagerList(value + 1),
-      })),
-    )
-}
-
-const pagerList$ = createPagerList({
-  max: 20,
-  width: 2,
-})
-
-const getFilteredPageList = value => pagerList$.pipe(
-  filter(({ center }) => center === value)
-)
-
-getFilteredPageList(20).subscribe(value => console.log(value.list))
-// pagerList$.subscribe(value => console.log(value))
-
+createPagerList(1, 3).subscribe(value => console.log(value))
+createPagerList(3, 3).subscribe(value => console.log(value))
 
